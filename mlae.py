@@ -109,6 +109,8 @@ class MLAE_Linear(nn.Linear, LoRALayer):
                            lora_dropout=lora_dropout, merge_weights=merge_weights)
 
         self.fan_in_fan_out = fan_in_fan_out
+        
+        # droprate_p
         self.drop_rate = drop_rate
         if r > 0:
             self.lora_A = nn.Parameter(self.weight.new_zeros(r, in_features))
