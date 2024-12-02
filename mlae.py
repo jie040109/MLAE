@@ -113,7 +113,10 @@ class MLAE_Linear(nn.Linear, LoRALayer):
         if r > 0:
             self.lora_A = nn.Parameter(self.weight.new_zeros(r, in_features))
             self.lora_B = nn.Parameter(self.weight.new_zeros(r, out_features))
+
+            #Adaptive cofficient
             self.lora_lamda = nn.Parameter(torch.full((r,), lora_alpha, dtype=torch.float), requires_grad=True)
+
             self.weight.requires_grad = False  
         self.reset_parameters()
         if fan_in_fan_out:
@@ -152,8 +155,12 @@ class MLAE_Linear(nn.Linear, LoRALayer):
             return w.T if self.fan_in_fan_out else w      
         if self.r > 0 and not self.merged:
             result = F.linear(x, T(self.weight), bias=self.bias)
+
+            # expert-level masking
             drop_lamda = F.dropout(self.lora_lamda, p=self.drop_rate, training=self.training)
+
             lora_activation = self.lora_dropout(x) @ self.lora_A.T  # (batch_size, r)
+             # apply masking to LoRA
             lora_activation = lora_activation * drop_lamda  
             lora_output = lora_activation @ self.lora_B  # (batch_size, out_features)
             result += lora_output
